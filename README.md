@@ -8,10 +8,11 @@ Bash script for migrating repositories with everything (branches, tags,..etc) fr
    ```
 2. Provide the list of source repositories in a file called repos.txt
    ```sh
-   cat > repos.txt
+   cat > repos.txt << EOF
     repo1
     repo2
     repo3
+   EOF
    ```
 3. Set the variables in the repo-migration.sh file
   ```sh
