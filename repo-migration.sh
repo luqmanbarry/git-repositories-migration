@@ -34,7 +34,7 @@ for REPO in $SOURCE_REPOS; do
     echo "Migrating repository: $REPO"
 
     # Clone the source repository with all branches and tags
-    git clone --mirror "$SOURCE_REPOS_ORG_URL/_git/$REPO" "$REPO"
+    git clone --mirror "https://$SOURCE_REPOS_PROJECT_PAT@$SOURCE_REPOS_ORG_URL/_git/$TARGET_REPOS_PREFIX-$REPO" "$REPO"
     cd "$REPO"
 
     TARGET_REPO_URL=""
