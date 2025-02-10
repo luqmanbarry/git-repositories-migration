@@ -76,6 +76,7 @@ for REPO in $SOURCE_REPOS; do
         git diff HEAD > source-state.patch
 
         echo "===> Reset to latest from target remote branch"
+        git fetch target ${BRANCH}
         git reset --hard "target/${BRANCH}"
 
         echo "===> Applying source state patch file..."
