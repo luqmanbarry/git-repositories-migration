@@ -10,15 +10,25 @@ TARGET_REPOS_ORG_URL="https://target.example.com/target-org/target-project"  # R
 SOURCE_REPOS_PROJECT_PAT="source-repos-pat"  # Replace with your source PAT
 TARGET_REPOS_PROJECT_PAT="target-repos-pat"  # Replace with your target PAT
 
-WORKING_DIR="/tmp/repos_migration"  # Working directory for cloning repos
+CURRENT_DIR="$(pwd)"  # Current working directory
+WORKING_DIR="/${CURRENT_DIR}/repos_migration"  # Working directory for cloning repos
+REPORTS_DIR="/${CURRENT_DIR}/migration_reports"  # Directory where reports files will be stored
 PATCH_FILE="${WORKING_DIR}/source-state.patch"  # Patch file for merging source and target branches
+SUCCEEDED_REPORT_FILE="${REPORTS_DIR}/succeeded-migrations.csv"  # Succeeded code migrations report
+FAILED_REPORT_FILE="${REPORTS_DIR}/failed-migrations.csv"  # Failed code migrations report
 
 TARGET_REPOS_PREFIX="team-name" # Common prefix all target repos have. Set to empty string if none
 REPOS_LIST_FILE="$1"  # Path to file containing list of source repos to mirror (one repo per line)
 SOURCE_REPOS=""
 
-# Create working directory
+# Create directories tree and files
 mkdir -p "${WORKING_DIR}"
+mkdir -p "${REPORTS_DIR}"
+
+# Prepare the report headers
+echo "source_repo_url, source_repo, source_branch, target_repo_url, target_repo" > "${SUCCEEDED_REPORT_FILE}"
+echo "source_repo_url, source_repo, source_branch, target_repo_url, target_repo" > "${FAILED_REPORT_FILE}"
+
 cd "${WORKING_DIR}"
 
 if [ -z "${REPOS_LIST_FILE}" ];
@@ -57,11 +67,13 @@ for REPO in $SOURCE_REPOS; do
 
     if [ -z "${TARGET_REPOS_PREFIX}" ];
     then
-      TARGET_REPO_URL="${TARGET_REPOS_ORG_URL}/_git/${REPO}"
-      TARGET_REPO_URL_PAT="https://${TARGET_REPOS_PROJECT_PAT}@${TARGET_REPOS_ORG_URL//https:///}/_git/${REPO}"
+      TARGET_REPO="${REPO}"
+      TARGET_REPO_URL="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
+      TARGET_REPO_URL_PAT="https://${TARGET_REPOS_PROJECT_PAT}@${TARGET_REPOS_ORG_URL//https:///}/_git/${TARGET_REPO}"
     else
-      TARGET_REPO_URL="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPOS_PREFIX}-${REPO}"
-      TARGET_REPO_URL_PAT="https://${TARGET_REPOS_PROJECT_PAT}@${TARGET_REPOS_ORG_URL//https:///}/_git/${TARGET_REPOS_PREFIX}-${REPO}"
+      TARGET_REPO="${TARGET_REPOS_PREFIX}-${REPO}"
+      TARGET_REPO_URL="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
+      TARGET_REPO_URL_PAT="https://${TARGET_REPOS_PROJECT_PAT}@${TARGET_REPOS_ORG_URL//https:///}/_git/${TARGET_REPO}"
     fi
     echo "==> Set target remote url to repo..."
     git remote add target ${TARGET_REPO_URL_PAT}
@@ -89,9 +101,14 @@ for REPO in $SOURCE_REPOS; do
           echo "===> Push the branch to the target remote"
           git commit -am "Repo Migration: Merged source and target branches."
           git push target ${BRANCH}
+
+          # Write succeeded report
+          echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${SUCCEEDED_REPORT_FILE}"
         else
-          echo "===> Conflict resolution for branch '${BRANCH}' failed. Check the conflicts.txt file"
-          echo "${BRANCH}" >> conflicts.txt
+          echo "===> Conflict resolution for branch '${BRANCH}' failed. Check the ${FAILED_REPORT_FILE} file"
+
+          # Write failed report
+          echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${FAILED_REPORT_FILE}"
         fi
     done
 
@@ -105,6 +122,6 @@ done
 
 # Clean up working directory
 cd ..
-rm -rf "${WORKING_DIR}"
-
+rm -rf "$WORKING_DIR"
 echo "=> Migration completed!"
+echo "=> Check the reports files in: ${REPORTS_DIR}"
