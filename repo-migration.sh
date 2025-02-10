@@ -11,6 +11,7 @@ SOURCE_REPOS_PROJECT_PAT="source-repos-pat"  # Replace with your source PAT
 TARGET_REPOS_PROJECT_PAT="target-repos-pat"  # Replace with your target PAT
 
 WORKING_DIR="/tmp/repos_migration"  # Working directory for cloning repos
+PATCH_FILE="${WORKING_DIR}/source-state.patch"  # Working directory for cloning repos
 
 TARGET_REPOS_PREFIX="team-name" # Common prefix all target repos have. Set to empty string if none
 REPOS_LIST_FILE="$1"  # Path to file containing list of source repos to mirror (one repo per line)
@@ -73,19 +74,20 @@ for REPO in $SOURCE_REPOS; do
         git checkout -b ${BRANCH} "source/${BRANCH}"
 
         echo "===> Save the source state to patch file"
-        git diff HEAD > source-state.patch
+        git diff HEAD > "${PATCH_FILE}"
 
         echo "===> Reset to latest from target remote branch"
         git fetch target ${BRANCH}
         git reset --hard "target/${BRANCH}"
 
         echo "===> Applying source state patch file..."
-        git apply source-state.patch
+        git apply "${PATCH_FILE}"
 
         if [ "$?" == "0" ];
         then
           echo "===> Conflict resolution for branch '${BRANCH}' completed."
           echo "===> Push the branch to the target remote"
+          git commit -am "Repo Migration: Merged source and target branches."
           git push target ${BRANCH}
         else
           echo "===> Conflict resolution for branch '${BRANCH}' failed. Check the conflicts.txt file"
