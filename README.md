@@ -1,4 +1,4 @@
-# Git Repositories Migration
+# Git Repositories Migration (DRAFT)
 
 Bash script for migrating repositories with everything (branches, tags,..etc) from one git provider to another.
 
