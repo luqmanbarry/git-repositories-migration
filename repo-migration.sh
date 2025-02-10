@@ -11,7 +11,7 @@ SOURCE_REPOS_PROJECT_PAT="source-repos-pat"  # Replace with your source PAT
 TARGET_REPOS_PROJECT_PAT="target-repos-pat"  # Replace with your target PAT
 
 WORKING_DIR="/tmp/repos_migration"  # Working directory for cloning repos
-PATCH_FILE="${WORKING_DIR}/source-state.patch"  # Working directory for cloning repos
+PATCH_FILE="${WORKING_DIR}/source-state.patch"  # Patch file for merging source and target branches
 
 TARGET_REPOS_PREFIX="team-name" # Common prefix all target repos have. Set to empty string if none
 REPOS_LIST_FILE="$1"  # Path to file containing list of source repos to mirror (one repo per line)
