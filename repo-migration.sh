@@ -9,6 +9,7 @@ TARGET_REPOS_ORG_URL="https://target.example.com/target-org/target-project"  # R
 
 SOURCE_REPOS_PROJECT_PAT="source-repos-pat"  # Replace with your source PAT
 TARGET_REPOS_PROJECT_PAT="target-repos-pat"  # Replace with your target PAT
+TARGET_REPOS_PREFIX="team-name" # Common prefix all target repos have. Set to empty string if none
 
 CURRENT_DIR="$(pwd)"  # Current working directory
 WORKING_DIR="/${CURRENT_DIR}/repos_migration"  # Working directory for cloning repos
@@ -17,7 +18,6 @@ PATCH_FILE="${WORKING_DIR}/source-state.patch"  # Patch file for merging source 
 SUCCEEDED_REPORT_FILE="${REPORTS_DIR}/succeeded-migrations.csv"  # Succeeded code migrations report
 FAILED_REPORT_FILE="${REPORTS_DIR}/failed-migrations.csv"  # Failed code migrations report
 
-TARGET_REPOS_PREFIX="team-name" # Common prefix all target repos have. Set to empty string if none
 REPOS_LIST_FILE="$1"  # Path to file containing list of source repos to mirror (one repo per line)
 SOURCE_REPOS=""
 
