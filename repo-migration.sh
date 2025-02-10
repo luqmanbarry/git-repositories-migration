@@ -31,15 +31,15 @@ echo "source_repo_url, source_repo, source_branch, target_repo_url, target_repo"
 
 cd "${WORKING_DIR}"
 
-if [ -z "${REPOS_LIST_FILE}" ];
+if [ ! -z "${REPOS_LIST_FILE}" -a -f "${REPOS_LIST_FILE}" -a -r "${REPOS_LIST_FILE}" ];
 then
-  echo "=> Repos list file must be provided as input to the script."
-  echo "=> Example: ./repo-migration.sh source-repos.txt"
-  exit 1
-else
   SOURCE_REPOS=$(cat $REPOS_LIST_FILE)
   echo "=> Top N repos provided: "
   echo $SOURCE_REPOS | head
+else
+  echo "=> Repos list file must be provided as input to the script."
+  echo "=> Example: ./repo-migration.sh source-repos.txt"
+  exit 1
 fi
 
 # Loop through each repository
