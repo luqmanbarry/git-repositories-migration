@@ -4,8 +4,10 @@
 ## REMOVE THE SUBSTRING (_git) IF IT DOES NOT APPLY TO YOU
 
 # Configuration
-SOURCE_REPOS_ORG_URL="https://source.example.com/source-org/source-project"  # Replace with your source Azure Repos URL
-TARGET_REPOS_ORG_URL="https://target.example.com/target-org/target-project"  # Replace with your target Azure DevOps URL
+# LEAVE OUT https://
+SOURCE_REPOS_ORG_URL="source.example.com/source-org/source-project"  # Replace with your source Azure Repos URL.
+# LEAVE OUT https://
+TARGET_REPOS_ORG_URL="target.example.com/target-org/target-project"  # Replace with your target Azure DevOps URL.
 
 SOURCE_REPOS_PROJECT_PAT="source-repos-pat"  # Replace with your source PAT
 TARGET_REPOS_PROJECT_PAT="target-repos-pat"  # Replace with your target PAT
@@ -39,8 +41,8 @@ then
     echo "==> Migrating repository: $REPO"
 
     SOURCE_REPO_URL="${SOURCE_REPOS_ORG_URL}/_git/${REPO}"
-    SOURCE_REPO_URL_PAT="https://${SOURCE_REPOS_ORG_URL}/_git/${REPO}"
-    # SOURCE_REPO_URL_PAT="https://${SOURCE_REPOS_PROJECT_PAT}@${SOURCE_REPOS_ORG_URL}/_git/${REPO}" 
+    # SOURCE_REPO_URL_PAT="https://${SOURCE_REPOS_ORG_URL}/_git/${REPO}"
+    SOURCE_REPO_URL_PAT="https://${SOURCE_REPOS_PROJECT_PAT}@${SOURCE_REPOS_ORG_URL}/_git/${REPO}" 
     echo $SOURCE_REPO_URL_PAT
   
     
