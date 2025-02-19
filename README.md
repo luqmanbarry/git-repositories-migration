@@ -2,6 +2,16 @@
 
 Bash script for migrating repositories with everything (branches, tags,..etc) from one git provider to another.
 
+## Pre-requisites
+- Configure the Git credentials helper: `https://git-scm.com/docs/gitcredentials`
+- Script works best on a native Linux distribution
+   - If on Windows, the script does not work well with Git Bash; instead set up Windows Subsystem for Linux (WSL)
+      - Configure Git: `https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-git`
+- Git config file setup: `https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup`
+- Generate project scoped PAT tokens for source and target repos
+
+## Procedure
+
 1. Grant the script execute permission
    ```sh
    chmod 755 repo-migration.sh
@@ -29,5 +39,4 @@ Bash script for migrating repositories with everything (branches, tags,..etc) fr
    ```sh
    ./repo-migration.sh repos.txt
    ```
-
 
