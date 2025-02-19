@@ -142,3 +142,5 @@ fi
 
 echo "=> Migration completed!"
 echo "=> Check the reports files in: ${REPORTS_DIR}"
+echo "=> 'SUCCEEDED' migrations report file: ${SUCCEEDED_REPORT_FILE}"
+echo "=> 'FAILED' migrations report file: ${FAILED_REPORT_FILE}"
