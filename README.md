@@ -3,6 +3,10 @@
 Bash script for migrating repositories with everything (branches, tags,..etc) from one git provider to another.
 
 ## Pre-requisites
+- Install Git
+   - Instructions: `https://git-scm.com/book/en/v2/Getting-Started-Installing-Git`   
+- Install git-filter-repo package
+   - Instructions: `https://github.com/newren/git-filter-repo/blob/main/INSTALL.md`
 - Configure the Git credentials helper: `https://git-scm.com/docs/gitcredentials`
 - Script works best on a native Linux distribution
    - If on Windows, the script does not work well with Git Bash; instead set up Windows Subsystem for Linux (WSL)
