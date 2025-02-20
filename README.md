@@ -38,6 +38,6 @@ Bash script for migrating repositories with everything (branches, tags,..etc) fr
 
 4. Execute the bash script
    ```sh
-   ./repo-migration.sh repos.txt 2>&1 | tee "$(date +%Y%m%d%H%M)-repo-migrations.log"
+   ./repo-migration.sh repos.txt 2>&1 | tee "repo-migrations-$(date +%Y%m%d%H%M).log"
    ```
 
