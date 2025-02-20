@@ -161,8 +161,11 @@ then
             git commit -am "Repo Migration: Merged source and target branches."
           
             git push target ${BRANCH}
-            # Write failed report
-            echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${FAILED_REPORT_FILE}"
+            if [ "$?" == "0" ];
+            then
+              # Write failed report
+              echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${FAILED_REPORT_FILE}"
+            fi
           fi
       done
 
