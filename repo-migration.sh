@@ -11,6 +11,7 @@ TARGET_REPOS_ORG_URL="target.example.com/target-org/target-project"  # Replace w
 SOURCE_REPOS_PROJECT_PAT="source-repos-pat"  # Replace with your source PAT
 TARGET_REPOS_PROJECT_PAT="target-repos-pat"  # Replace with your target PAT
 TARGET_REPOS_PREFIX="team-name" # Common prefix all target repos have. Set to empty string if none
+CLEANUP_BINARY_FILES=true # Set this flag to true if you want large files removed from git history
 
 
 CURRENT_DIR="$(pwd)"  # Current working directory
@@ -37,120 +38,119 @@ then
   # SOURCE_REPOS=$(<$REPOS_LIST_FILE)
   while SOURCE_REPOS= read -r line; do
     echo $line
-    REPO=$(echo "$line" | tr -d '\r' |  tr -d '\n')
-    echo "==> Migrating repository: $REPO"
-
-    SOURCE_REPO_URL="${SOURCE_REPOS_ORG_URL}/_git/${REPO}"
-    # SOURCE_REPO_URL_PAT="https://${SOURCE_REPOS_ORG_URL}/_git/${REPO}"
-    SOURCE_REPO_URL_PAT="https://${SOURCE_REPOS_PROJECT_PAT}@${SOURCE_REPOS_ORG_URL}/_git/${REPO}" 
-    echo $SOURCE_REPO_URL_PAT
-    
-    cd "${WORKING_DIR}"
-    echo "==> Clone the source repository with all branches and tags..."
-    export GIT_PAT="$SOURCE_REPOS_PROJECT_PAT"
-    export GIT_TOKEN="$SOURCE_REPOS_PROJECT_PAT"
-     git clone  "${SOURCE_REPO_URL_PAT}" || true && echo "REPO exists already"
-
-    # git tfs clone ${SOURCE_REPOS_ORG_URL} "\$/$REPO" ./${REPO} --branches=all
-    cd "${REPO}"
-    echo "==> Set source remote url to repo..."
-    git remote add source ${SOURCE_REPO_URL_PAT}
-
-    # Fetch all branches and tags from the source remote
-    echo "==> Fetching all branches and tags from ${SOURCE_REPO_URL}..."
-    git fetch source --tags
-
-    echo "==> Get a list of all branches in the source remote..."
-    SOURCE_BRANCHES=$(git branch -r | grep "source/" | sed "s/source\///" | grep -v "HEAD")
-    echo $SOURCE_BRANCHES
-
-
-    TARGET_REPO_URL=""
-    TARGET_REPO_URL_PAT=""
-
-    if [ -z "${TARGET_REPOS_PREFIX}" ];
+    REPO=$(echo "$line" | tr -d '\r' |  tr -d '\n' | xargs)
+    if [ ! -z "$REPO" ];
     then
-      TARGET_REPO="${REPO}"
-      TARGET_REPO_URL="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
-      TARGET_REPO_URL_PAT="https://${TARGET_REPOS_PROJECT_PAT}@${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
-      # TARGET_REPO_URL_PAT="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
+      echo "==> Migrating repository: $REPO"
+
+      SOURCE_REPO_URL="${SOURCE_REPOS_ORG_URL}/_git/${REPO}"
+      # SOURCE_REPO_URL_PAT="https://${SOURCE_REPOS_ORG_URL}/_git/${REPO}"
+      SOURCE_REPO_URL_PAT="https://${SOURCE_REPOS_PROJECT_PAT}@${SOURCE_REPOS_ORG_URL}/_git/${REPO}" 
+      echo $SOURCE_REPO_URL_PAT
       
-    else
-      TARGET_REPO="${TARGET_REPOS_PREFIX}-${REPO}"
-      TARGET_REPO_URL="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
-      TARGET_REPO_URL_PAT="https://${TARGET_REPOS_PROJECT_PAT}@${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
-      # TARGET_REPO_URL_PAT="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
+      cd "${WORKING_DIR}"
+      echo "==> Clone the source repository with all branches and tags..."
+      export GIT_PAT="$SOURCE_REPOS_PROJECT_PAT"
+      export GIT_TOKEN="$SOURCE_REPOS_PROJECT_PAT"
+      git clone  "${SOURCE_REPO_URL_PAT}" || true && echo "REPO exists already"
 
-    fi
-    echo "==> Set target remote url to repo..."
-    git remote add target ${TARGET_REPO_URL_PAT}
-    # Copy individual branches from source to destination
-    SOURCE_BRANCHES=($SOURCE_BRANCHES)
-    echo ${SOURCE_BRANCHES[@]}
+      # git tfs clone ${SOURCE_REPOS_ORG_URL} "\$/$REPO" ./${REPO} --branches=all
+      cd "${REPO}"
+      echo "==> Set source remote url to repo..."
+      git remote add source ${SOURCE_REPO_URL_PAT}
 
-    for BRANCH in "${SOURCE_BRANCHES[@]}"; do
-        echo "===> Copying branch ${BRANCH}..."
-        BRANCH=$(echo $BRANCH | xargs)
-        echo "===> Checkout the branch from the source remote"
-        git checkout -b "${BRANCH}" source/${BRANCH} || true
-       
-        git fetch 
-        git pull source ${BRANCH}
+      # Fetch all branches and tags from the source remote
+      echo "==> Fetching all branches and tags from ${SOURCE_REPO_URL}..."
+      git fetch source --tags
+
+      echo "==> Get a list of all branches in the source remote..."
+      SOURCE_BRANCHES=$(git branch -r | grep "source/" | sed "s/source\///" | grep -v "HEAD")
+      echo $SOURCE_BRANCHES
 
 
-        echo "===> Save the source state to patch file"
-        git diff HEAD > "${PATCH_FILE}"
+      TARGET_REPO_URL=""
+      TARGET_REPO_URL_PAT=""
 
-        PUSH_OUTPUT=""
-        git push -u target ${BRANCH}
+      if [ -z "${TARGET_REPOS_PREFIX}" ];
+      then
+        TARGET_REPO="${REPO}"
+        TARGET_REPO_URL="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
+        TARGET_REPO_URL_PAT="https://${TARGET_REPOS_PROJECT_PAT}@${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
+        # TARGET_REPO_URL_PAT="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
         
-        if [ "$?" == "0" ];
-        then
-          echo "===> No resolution for branch '${BRANCH}'."
-          # Write succeeded report
-          echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${SUCCEEDED_REPORT_FILE}"
-          PUSH_OUTPUT=$(git push target ${BRANCH} || true | tr '\n' ' ' | tr '\r' ' ' )
-        else
-          if [[ "$PUSH_OUTPUT" == *"policy-specified pattern"* ]];
+      else
+        TARGET_REPO="${TARGET_REPOS_PREFIX}-${REPO}"
+        TARGET_REPO_URL="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
+        TARGET_REPO_URL_PAT="https://${TARGET_REPOS_PROJECT_PAT}@${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
+        # TARGET_REPO_URL_PAT="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
+
+      fi
+      echo "==> Set target remote url to repo..."
+      git remote add target ${TARGET_REPO_URL_PAT}
+      # Copy individual branches from source to destination
+      SOURCE_BRANCHES=($SOURCE_BRANCHES)
+      echo ${SOURCE_BRANCHES[@]}
+
+      for BRANCH in "${SOURCE_BRANCHES[@]}"; do
+          echo "===> Copying branch ${BRANCH}..."
+          BRANCH=$(echo $BRANCH | xargs)
+          echo "===> Checkout the branch from the source remote"
+          git checkout -b "${BRANCH}" source/${BRANCH} || true
+        
+          git fetch 
+          git pull source ${BRANCH}
+
+
+          echo "===> Save the source state to patch file"
+          git diff HEAD > "${PATCH_FILE}"
+
+          git push -u target ${BRANCH}
+          
+          if [ "$?" == "0" ];
           then
-            echo "===> Cleaning up binary files form the git log..."
-
-            echo "====> Repack the repository"
-            git repack -a -d --depth=300 --window=300
-
-            echo "====> Remove files with binary extensions from history"
-            git filter-repo \
-              --path-glob '*.zip' \
-              --path-glob '*.xls' \
-              --path-glob '*.tar' \
-              --path-glob '*.jar' \
-              --path-glob '*.gz' \
-              --path-glob '*.tar' \
-              --path-glob '*.mov' \
-              --path-glob '*.avi' \
-              --path-glob '*.iso' \
-              --path-glob '*.msi' \
-              --path-glob '*.mp4' \
-              --path-glob '*.jpg' \
-              --path-glob '*.png' \
-              --path-glob '*.jpeg' \
-              --path-glob '*.webp' \
-              --path-glob 'node_modules/**' \
-              --path-glob '**/node_modules/**' \
-              --invert-paths --force
-
-            echo "====> Remove large files from history"
-            git filter-repo --strip-blobs-bigger-than 1M --force
-
-            echo "====> Clean up the repository"
-            git gc --aggressive --prune=now
-
-            echo "====> Verify the repository size"
-            du -sh .git
-            git commit -am "Repo Migration: Removed binary files."
-            git push target ${BRANCH}
+            echo "===> No resolutions for branch '${BRANCH}'."
+            # Write succeeded report
+            echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${SUCCEEDED_REPORT_FILE}"
           else
+            if [ "$CLEANUP_BINARY_FILES" == "true" ];
+            then
+              echo "===> Cleaning up binary files form the git log..."
 
+              echo "====> Repack the repository"
+              git repack -a -d --depth=300 --window=300
+
+              echo "====> Remove files with binary extensions from git history"
+              git filter-repo \
+                --path-glob '*.zip' \
+                --path-glob '*.xls' \
+                --path-glob '*.tar' \
+                --path-glob '*.jar' \
+                --path-glob '*.gz' \
+                --path-glob '*.tar' \
+                --path-glob '*.mov' \
+                --path-glob '*.avi' \
+                --path-glob '*.iso' \
+                --path-glob '*.msi' \
+                --path-glob '*.mp4' \
+                --path-glob '*.jpg' \
+                --path-glob '*.png' \
+                --path-glob '*.jpeg' \
+                --path-glob '*.webp' \
+                --path-glob 'node_modules/**' \
+                --path-glob '**/node_modules/**' \
+                --invert-paths --force
+
+              echo "====> Remove large files from history"
+              git filter-repo --strip-blobs-bigger-than 1M --force
+
+              echo "====> Clean up the repository"
+              git gc --aggressive --prune=now
+
+              echo "====> Verify the repository size"
+              du -sh .git
+              git commit -am "Repo Migration: Removed binary files."
+              git push target ${BRANCH}
+            fi
             echo "===> Conflict resolution for branch '${BRANCH}' failed. Check the ${FAILED_REPORT_FILE} file"
             echo "===> Reset to latest from target remote branch"
             git fetch target ${BRANCH}
@@ -164,11 +164,11 @@ then
             # Write failed report
             echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${FAILED_REPORT_FILE}"
           fi
-        fi
-    done
+      done
 
-    echo "==> Copying tags from source to target..."
-    git push target --tags
+      echo "==> Copying tags from source to target..."
+      git push target --tags
+    fi
 
   done < $REPOS_LIST_FILE
  
