@@ -119,7 +119,25 @@ then
             git repack -a -d --depth=300 --window=300
 
             echo "====> Remove files with binary extensions from history"
-            git filter-repo --strip-blobs-bigger-than 1M --force
+            git filter-repo \
+              --path-glob '*.zip' \
+              --path-glob '*.xls' \
+              --path-glob '*.tar' \
+              --path-glob '*.jar' \
+              --path-glob '*.gz' \
+              --path-glob '*.tar' \
+              --path-glob '*.mov' \
+              --path-glob '*.avi' \
+              --path-glob '*.iso' \
+              --path-glob '*.msi' \
+              --path-glob '*.mp4' \
+              --path-glob '*.jpg' \
+              --path-glob '*.png' \
+              --path-glob '*.jpeg' \
+              --path-glob '*.webp' \
+              --path-glob 'node_modules/**' \
+              --path-glob '**/node_modules/**' \
+              --invert-paths --force
 
             echo "====> Remove large files from history"
             git filter-repo --strip-blobs-bigger-than 1M --force
