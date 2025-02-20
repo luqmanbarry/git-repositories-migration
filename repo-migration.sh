@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set +e
 ## ALL GIT REPOS URLS INCLUDE "_git", THIS IS AZURE SPECIFIC
 ## REMOVE THE SUBSTRING (_git) IF IT DOES NOT APPLY TO YOU
 
@@ -101,15 +101,15 @@ then
         echo "===> Save the source state to patch file"
         git diff HEAD > "${PATCH_FILE}"
 
-        PUSH_OUTPUT=$(git push -u target ${BRANCH} || true | tr '\n' ' ')
+        PUSH_OUTPUT=""
+        git push -u target ${BRANCH}
         
-        if [ "$?" == "0" ];
+        if [ "$?" == "0" ]];
         then
-          echo "===> Conflict resolution for branch '${BRANCH}' completed."
-          echo "===> Push the branch to the target remote"
-          git push target ${BRANCH}
+          echo "===> No resolution for branch '${BRANCH}'."
           # Write succeeded report
           echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${SUCCEEDED_REPORT_FILE}"
+          PUSH_OUTPUT=$(git push target ${BRANCH} || true | tr '\n' ' ' | tr '\r' ' ' )
         else
           if [[ "$PUSH_OUTPUT" == *"policy-specified pattern"* ]];
           then
@@ -119,7 +119,7 @@ then
             git repack -a -d --depth=300 --window=300
 
             echo "====> Remove large files from history"
-            git filter-repo --strip-blobs-bigger-than 10M --force
+            git filter-repo --strip-blobs-bigger-than 1M --force
 
             echo "====> Clean up the repository"
             git gc --aggressive --prune=now
