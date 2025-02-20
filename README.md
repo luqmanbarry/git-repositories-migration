@@ -38,6 +38,7 @@ Bash script for migrating repositories with everything (branches, tags,..etc) fr
    SOURCE_REPOS_PROJECT_PAT="source-repos-pat"  # Replace with your source PAT
    TARGET_REPOS_PROJECT_PAT="target-repos-pat"  # Replace with your target PAT
    TARGET_REPOS_PREFIX="team-name" # Common prefix all target repos have. Set to empty string if none
+   CLEANUP_BINARY_FILES=true # Set this flag to true if you want large files removed from git history
    ```
 
 4. Execute the bash script
