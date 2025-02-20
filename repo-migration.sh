@@ -132,6 +132,24 @@ then
                 --path-glob '*.iso' \
                 --path-glob '*.msi' \
                 --path-glob '*.mp4' \
+                --path-glob '*.war' \
+                --path-glob '*.exe' \
+                --path-glob '*.dll' \
+                --path-glob '*.dll' \
+                --path-glob '*.vob' \
+                --path-glob '*.odt' \
+                --path-glob '*.docx' \
+                --path-glob '*.doc' \
+                --path-glob '*.tgz' \
+                --path-glob '*.rar' \
+                --path-glob '*.bz2' \
+                --path-glob '*.bzip2' \
+                --path-glob '*.7z' \
+                --path-glob '*.pptx' \
+                --path-glob '*.xlsm' \
+                --path-glob '*.xlsb' \
+                --path-glob '*.xltx' \
+                --path-glob '*.xlsx' \
                 --path-glob 'node_modules/**' \
                 --path-glob '**/node_modules/**' \
                 --invert-paths --force
