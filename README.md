@@ -8,7 +8,7 @@ Bash script for migrating repositories with everything (branches, tags,..etc) fr
    - If on Windows, the script does not work well with Git Bash; instead set up Windows Subsystem for Linux (WSL)
       - Configure Git: `https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-git`
 - Git config file setup: `https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup`
-- Generate project scoped PAT tokens for source and target repos
+- Generate project-scoped PAT tokens for source and target repos
 
 ## Procedure
 
@@ -16,7 +16,7 @@ Bash script for migrating repositories with everything (branches, tags,..etc) fr
    ```sh
    chmod 755 repo-migration.sh
    ```
-2. Provide the list of source repositories in a file called repos.txt
+2. Provide the list of source repositories in a file called repos.txt (add empty line at the end)
    ```sh
    cat > repos.txt << EOF
     repo1
