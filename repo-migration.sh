@@ -132,16 +132,12 @@ then
                 --path-glob '*.iso' \
                 --path-glob '*.msi' \
                 --path-glob '*.mp4' \
-                --path-glob '*.jpg' \
-                --path-glob '*.png' \
-                --path-glob '*.jpeg' \
-                --path-glob '*.webp' \
                 --path-glob 'node_modules/**' \
                 --path-glob '**/node_modules/**' \
                 --invert-paths --force
 
-              echo "====> Remove large files from history"
-              git filter-repo --strip-blobs-bigger-than 1M --force
+              echo "====> Remove large files from history. Example: 1M, 5M, 10M"
+              git filter-repo --strip-blobs-bigger-than 5M --force
 
               echo "====> Clean up the repository"
               git gc --aggressive --prune=now
