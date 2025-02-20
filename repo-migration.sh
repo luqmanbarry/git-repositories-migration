@@ -104,7 +104,7 @@ then
         PUSH_OUTPUT=""
         git push -u target ${BRANCH}
         
-        if [ "$?" == "0" ]];
+        if [ "$?" == "0" ];
         then
           echo "===> No resolution for branch '${BRANCH}'."
           # Write succeeded report
@@ -117,6 +117,9 @@ then
 
             echo "====> Repack the repository"
             git repack -a -d --depth=300 --window=300
+
+            echo "====> Remove files with binary extensions from history"
+            git filter-repo --strip-blobs-bigger-than 1M --force
 
             echo "====> Remove large files from history"
             git filter-repo --strip-blobs-bigger-than 1M --force
