@@ -126,7 +126,6 @@ then
                 --path-glob '*.tar' \
                 --path-glob '*.jar' \
                 --path-glob '*.gz' \
-                --path-glob '*.tar' \
                 --path-glob '*.mov' \
                 --path-glob '*.avi' \
                 --path-glob '*.iso' \
@@ -135,7 +134,7 @@ then
                 --path-glob '*.war' \
                 --path-glob '*.exe' \
                 --path-glob '*.dll' \
-                --path-glob '*.dll' \
+                --path-glob '*.deb' \
                 --path-glob '*.vob' \
                 --path-glob '*.odt' \
                 --path-glob '*.docx' \
@@ -150,6 +149,11 @@ then
                 --path-glob '*.xlsb' \
                 --path-glob '*.xltx' \
                 --path-glob '*.xlsx' \
+                --path-glob '*.pkg' \
+                --path-glob '*.rpm' \
+                --path-glob '*.tar.gz' \
+                --path-glob '*.dmg' \
+                --path-glob '*.bin' \
                 --path-glob 'node_modules/**' \
                 --path-glob '**/node_modules/**' \
                 --invert-paths --force
