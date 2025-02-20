@@ -8,10 +8,10 @@
 SOURCE_REPOS_ORG_URL="source.example.com/source-org/source-project"  # Replace with your source Azure Repos URL.
 # LEAVE OUT https://
 TARGET_REPOS_ORG_URL="target.example.com/target-org/target-project"  # Replace with your target Azure DevOps URL.
-
 SOURCE_REPOS_PROJECT_PAT="source-repos-pat"  # Replace with your source PAT
 TARGET_REPOS_PROJECT_PAT="target-repos-pat"  # Replace with your target PAT
 TARGET_REPOS_PREFIX="team-name" # Common prefix all target repos have. Set to empty string if none
+
 
 CURRENT_DIR="$(pwd)"  # Current working directory
 WORKING_DIR="${CURRENT_DIR}/repo_migration"  # Working directory for cloning repos
@@ -44,7 +44,6 @@ then
     # SOURCE_REPO_URL_PAT="https://${SOURCE_REPOS_ORG_URL}/_git/${REPO}"
     SOURCE_REPO_URL_PAT="https://${SOURCE_REPOS_PROJECT_PAT}@${SOURCE_REPOS_ORG_URL}/_git/${REPO}" 
     echo $SOURCE_REPO_URL_PAT
-  
     
     cd "${WORKING_DIR}"
     echo "==> Clone the source repository with all branches and tags..."
@@ -102,30 +101,48 @@ then
         echo "===> Save the source state to patch file"
         git diff HEAD > "${PATCH_FILE}"
 
-        git push -u target ${BRANCH}
+        PUSH_OUTPUT=$(git push -u target ${BRANCH} | tr '\n' ' ')
         
         if [ "$?" == "0" ];
         then
           echo "===> Conflict resolution for branch '${BRANCH}' completed."
           echo "===> Push the branch to the target remote"
-         
-          # git push target ${BRANCH}
-
+          git push target ${BRANCH}
           # Write succeeded report
           echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${SUCCEEDED_REPORT_FILE}"
         else
-          echo "===> Conflict resolution for branch '${BRANCH}' failed. Check the ${FAILED_REPORT_FILE} file"
-          echo "===> Reset to latest from target remote branch"
-          git fetch target ${BRANCH}
-          git reset --hard "target/${BRANCH}"
+          if [[ "$PUSH_OUTPUT" == *"policy-specified pattern"* ]];
+          then
+            echo "===> Cleaning up binary files form the git log..."
 
-          echo "===> Applying source state patch file..."
-          git apply "${PATCH_FILE}"
-          git commit -am "Repo Migration: Merged source and target branches."
-        
-           git push target ${BRANCH}
-          # Write failed report
-          echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${FAILED_REPORT_FILE}"
+            echo "====> Repack the repository"
+            git repack -a -d --depth=300 --window=300
+
+            echo "====> Remove large files from history"
+            git filter-repo --strip-blobs-bigger-than 10M --force
+
+            echo "====> Clean up the repository"
+            git gc --aggressive --prune=now
+
+            echo "====> Verify the repository size"
+            du -sh .git
+            git commit -am "Repo Migration: Removed binary files."
+            git push target ${BRANCH}
+          else
+
+            echo "===> Conflict resolution for branch '${BRANCH}' failed. Check the ${FAILED_REPORT_FILE} file"
+            echo "===> Reset to latest from target remote branch"
+            git fetch target ${BRANCH}
+            git reset --hard "target/${BRANCH}"
+
+            echo "===> Applying source state patch file..."
+            git apply "${PATCH_FILE}"
+            git commit -am "Repo Migration: Merged source and target branches."
+          
+            git push target ${BRANCH}
+            # Write failed report
+            echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${FAILED_REPORT_FILE}"
+          fi
         fi
     done
 
