@@ -101,7 +101,7 @@ then
         echo "===> Save the source state to patch file"
         git diff HEAD > "${PATCH_FILE}"
 
-        PUSH_OUTPUT=$(git push -u target ${BRANCH} | tr '\n' ' ')
+        PUSH_OUTPUT=$(git push -u target ${BRANCH} || true | tr '\n' ' ')
         
         if [ "$?" == "0" ];
         then
