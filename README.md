@@ -30,15 +30,16 @@ Bash script for migrating repositories with everything (branches, tags,..etc) fr
    ```
 3. Set the variables in the repo-migration.sh file
    ```sh
-   # Configuration
+   # Configuration - Set these variables before running the script
    # LEAVE OUT https://
    SOURCE_REPOS_ORG_URL="source.example.com/source-org/source-project"  # Replace with your source Azure Repos URL.
    # LEAVE OUT https://
    TARGET_REPOS_ORG_URL="target.example.com/target-org/target-project"  # Replace with your target Azure DevOps URL.
-   SOURCE_REPOS_PROJECT_PAT="source-repos-pat"  # Replace with your source PAT
-   TARGET_REPOS_PROJECT_PAT="target-repos-pat"  # Replace with your target PAT
-   TARGET_REPOS_PREFIX="team-name" # Common prefix all target repos have. Set to empty string if none
-   CLEANUP_BINARY_FILES=true # Set this flag to true if you want large files removed from git history
+   SOURCE_REPOS_PROJECT_PAT=""  # Replace with your source PAT. Leave empty if you've already setup Git Credentials Helper for this url
+   TARGET_REPOS_PROJECT_PAT=""  # Replace with your target PAT. Leave empty if you've already setup Git Credentials Helper for this url
+   TARGET_REPOS_PREFIX="team-name"  # Common prefix all target repos have. Set to empty string if none
+   CLEANUP_LARGE_FILES=true  # Set this flag to true if you want large files removed from git history
+   LARGE_FILE_SIZE="5M"  # Potential values: 500K, 1M, 2M, 3M, 10M,..
    ```
 
 4. Execute the bash script
