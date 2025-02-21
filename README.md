@@ -1,6 +1,13 @@
 # Git Repositories Migration
 
-Bash script for migrating repositories with everything (branches, tags,..etc) from one git provider to another.
+While preserving git history, this bash script migrates repositories including branches, tags, commit log, from one git provider to another. 
+
+The script has logic to clean up files with certain extensions ([see script](./run-migration.sh)); and files with sizes reaching a defined value, the default is 5 Megabytes (5M).
+
+To enable Large File cleanup, set these two parameters (enabled by default):
+- `CLEANUP_LARGE_FILES=true`: Set to true to enable the file cleanup, false for otherwise.
+- `LARGE_FILE_SIZE="5M"`: Set the large file size limit using this variable. The default is 5M.
+- Files extensions are defined within the script, you can add or remove extensions per your needs.
 
 ## Pre-requisites
 - Install Git
