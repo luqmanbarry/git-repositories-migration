@@ -2,7 +2,7 @@
 
 While preserving git history, this bash script migrates repositories including branches, tags, commit log, from one git provider to another. 
 
-The script has logic to clean up files with certain extensions ([see script](./run-migration.sh)); and files with sizes reaching a defined value, the default is 5 Megabytes (5M).
+The script has logic to clean up files with certain extensions ([see script](./run-migrations.sh)); and files with sizes reaching a defined value, the default is 5 Megabytes (5M).
 
 To enable Large File cleanup, set these two parameters (enabled by default):
 - `CLEANUP_LARGE_FILES=true`: Set to true to enable the file cleanup, false for otherwise.
