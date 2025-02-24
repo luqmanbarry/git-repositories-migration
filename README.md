@@ -23,11 +23,13 @@ To enable Large File cleanup, set these two parameters (enabled by default):
 
 ## Procedure
 
-1. Grant the script execute permission
+1. Grant the script execute permission (If running the shell script)
    ```sh
    chmod 755 repo-migration.sh
    ```
-2. Provide the list of source repositories in a file called repos.txt (add empty line at the end)
+2. Install Pyathon >= 3.12.x (If running the Python script)
+
+3. Provide the list of source repositories in a file called repos.txt (add empty line at the end)
    ```sh
    cat > repos.txt << EOF
     repo1
@@ -35,7 +37,7 @@ To enable Large File cleanup, set these two parameters (enabled by default):
     repo3
    EOF
    ```
-3. Set the variables in the repo-migration.sh file
+3. Set the variables in the repo-migration.sh or repo_migration.py file
    ```sh
    # Configuration - Set these variables before running the script
    # LEAVE OUT https://
@@ -49,8 +51,14 @@ To enable Large File cleanup, set these two parameters (enabled by default):
    LARGE_FILE_SIZE="5M"  # Potential values: 500K, 1M, 2M, 3M, 10M,..
    ```
 
-4. Execute the bash script
+4. Execute the script
+
+   Bash:
    ```sh
-   ./repo-migration.sh repos.txt 2>&1 | tee "repo-migrations-$(date +%Y%m%d%H%M).log"
+   ./repo-migration.sh repos.txt 2>&1 | tee "repo-migrations-bash-$(date +%Y%m%d%H%M).log"
+   ```
+   Python:
+   ```sh
+   repo_migration.py repos.txt 2>&1 | tee "repo-migrations-python-$(date +%Y%m%d%H%M).log"
    ```
 
