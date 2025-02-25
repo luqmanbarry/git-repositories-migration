@@ -201,6 +201,10 @@ then
             then
               # Write failed report
               echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${FAILED_REPORT_FILE}"
+            else
+              echo "===> No resolutions for branch '${BRANCH}'."
+              # Write succeeded report
+              echo "${SOURCE_REPO_URL}, ${REPO}, ${BRANCH}, ${TARGET_REPO_URL}, ${TARGET_REPO}" >> "${SUCCEEDED_REPORT_FILE}"
             fi
           fi
       done
