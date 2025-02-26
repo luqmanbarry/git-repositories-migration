@@ -62,3 +62,14 @@ To enable Large File cleanup, set these two parameters (enabled by default):
    repo_migration.py repos.txt 2>&1 | tee "repo-migrations-python-$(date +%Y%m%d%H%M).log"
    ```
 
+## Git Large File Size Cleanup
+
+1. Change directory to Git repository
+   ```sh
+   cd <git-repository-dir>
+   ```
+2. Run the bash script
+   ```sh
+   ./git-large-file-size-fix.sh
+   ```
+

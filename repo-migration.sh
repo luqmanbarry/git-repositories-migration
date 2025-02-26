@@ -16,7 +16,7 @@ LARGE_FILE_SIZE="5M"  # Potential values: 500K, 1M, 2M, 3M, 10M,..
 
 
 CURRENT_DIR="$(pwd)"  # Current working directory
-WORKING_DIR="${CURRENT_DIR}/repo_migration"  # Working directory for cloning repos
+WORKING_DIR="${CURRENT_DIR}/repo_migration_$(date +%Y%m%d%H)"  # Working directory for cloning repos
 REPORTS_DIR="${CURRENT_DIR}/migration_reports/${TARGET_REPOS_PREFIX:- }"  # Directory where reports files will be stored
 PATCH_FILE="${WORKING_DIR}/source-state.patch"  # Patch file for merging source and target branches
 SUCCEEDED_REPORT_FILE="${REPORTS_DIR}/succeeded-migrations.csv"  # Succeeded code migrations report
@@ -130,7 +130,8 @@ then
           else
             if [ "$CLEANUP_LARGE_FILES" == "true" ];
             then
-              echo "===> Cleaning up binary files form the git log..."
+              echo "===> Cleaning up binary files from the git log..."
+              echo "~~~> Repository size BEFORE cleanup: $(du -sh .)"
 
               echo "====> Repack the repository"
               git repack -a -d --depth=300 --window=300
@@ -184,6 +185,7 @@ then
 
               echo "====> Verify the repository size"
               du -sh .git
+              echo "~~~> Repository size AFTER cleanup: $(du -sh .)"
               git commit -am "Repo Migration: Removed binary files."
               git push target ${BRANCH}
             fi

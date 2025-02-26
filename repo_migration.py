@@ -77,6 +77,8 @@ def push_branch_to_target(repo_dir, branch, target_repo_url_pat):
 def cleanup_large_files(repo_dir):
     """Clean up large files from git history."""
     print("===> Cleaning up binary files from the git log...")
+    print(f"~~~> Repository size BEFORE cleanup: {get_repo_size(repo_dir)}")
+
     commands = [
         "git repack -a -d --depth=300 --window=300",
         "git filter-repo --path-glob '*.zip' --path-glob '*.xls' --path-glob '*.tar' --path-glob '*.jar' "
@@ -93,7 +95,15 @@ def cleanup_large_files(repo_dir):
     for command in commands:
         if not run_command(command, cwd=repo_dir):
             return False
+
+    print(f"~~~> Repository size AFTER cleanup: {get_repo_size(repo_dir)}")
     return True
+
+
+def get_repo_size(repo_dir):
+    """Get the size of the repository."""
+    result = subprocess.run("du -sh .", shell=True, cwd=repo_dir, capture_output=True, text=True)
+    return result.stdout.strip()
 
 
 def migrate_repository(source_repo_url, repo_name, target_repo_url, target_repo_url_pat):
