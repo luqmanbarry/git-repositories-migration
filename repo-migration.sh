@@ -1,5 +1,6 @@
 #!/bin/bash
 set +e
+set -x
 ## ALL GIT REPOS URLS INCLUDE "_git", THIS IS AZURE SPECIFIC
 ## REMOVE THE SUBSTRING (_git) IF IT DOES NOT APPLY TO YOU
 
@@ -83,7 +84,7 @@ then
 
         if [ -z "${TARGET_REPOS_PROJECT_PAT}" ];
         then
-          TARGET_REPO_URL_PAT="${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
+          TARGET_REPO_URL_PAT="https://${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
         else
           TARGET_REPO_URL_PAT="https://${TARGET_REPOS_PROJECT_PAT}@${TARGET_REPOS_ORG_URL}/_git/${TARGET_REPO}"
         fi
