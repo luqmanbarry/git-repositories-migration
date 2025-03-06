@@ -1,9 +1,15 @@
 #!/bin/bash
 set +e
+set -x
+
+WORKING_DIR="$1"
 
 # RUN SCRIPT FROM WITHIN GIT REPO
 
 LARGE_FILE_SIZE="5M"  # Potential values: 500K, 1M, 2M, 3M, 10M,..
+
+echo "Cleaning up this directory: $WORKING_DIR"
+cd $WORKING_DIR && pwd
 
 
 echo "===> Cleaning up binary files from the git log..."
