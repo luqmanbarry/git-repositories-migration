@@ -64,12 +64,10 @@ To enable Large File cleanup, set these two parameters (enabled by default):
 
 ## Git Large File Size Cleanup
 
-1. Change directory to Git repository
+1. Run the bash script
+   
    ```sh
-   cd <git-repository-dir>
-   ```
-2. Run the bash script
-   ```sh
-   ./git-large-file-size-fix.sh
+   ./git-large-file-size-fix.sh <path_to_git_directory>
+   # Example: If I am already in the git directory: ./git-large-file-size-fix.sh ./
    ```
 
