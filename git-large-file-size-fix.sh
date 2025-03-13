@@ -2,6 +2,14 @@
 set +e
 set -x
 
+if git filter-repo --version &> /dev/null; then
+  echo "==> git filter-repo is installed and working."
+else
+  echo "==> git filter-repo is not installed or not working."
+  echo "==> Find install instructions at this url: https://github.com/newren/git-filter-repo/blob/main/INSTALL.md"
+  exit 1
+fi
+
 WORKING_DIR="$1"
 LAST_DIR="$(pwd)"
 
