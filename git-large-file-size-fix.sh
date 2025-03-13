@@ -56,11 +56,13 @@ git filter-repo \
   --path-glob '*.bin' \
   --path-glob 'node_modules/**' \
   --path-glob '**/node_modules/**' \
-  --invert-paths --force
+  --invert-paths \
+  --force
 
 echo "===> Remove large files from history. Example: 1M, 5M, 10M"
 git filter-repo \
   --strip-blobs-bigger-than $LARGE_FILE_SIZE \
+  --invert-paths \
   --force
 
 echo "===> Clean up the repository"
