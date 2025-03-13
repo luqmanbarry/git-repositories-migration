@@ -3,6 +3,7 @@ set +e
 set -x
 
 WORKING_DIR="$1"
+LAST_DIR="$(pwd)"
 
 # RUN SCRIPT FROM WITHIN GIT REPO
 
@@ -68,4 +69,4 @@ git gc --aggressive --prune=now
 echo "===> Verify the repository size"
 du -sh .git
 echo "~~~> Repository size AFTER cleanup: '$(du -sh .)'"
-cd - || true
+cd "${LAST_DIR}"
