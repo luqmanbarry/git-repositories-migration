@@ -71,3 +71,10 @@ To enable Large File cleanup, set these two parameters (enabled by default):
    # Example: If I am already in the git directory: ./git-large-file-size-fix.sh ./
    ```
 
+2. Commit and Push
+
+   ```sh
+   git commit -am "Resolved git large-file-size issues"
+   git push
+   ```
+
