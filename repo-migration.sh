@@ -131,6 +131,15 @@ then
           else
             if [ "$CLEANUP_LARGE_FILES" == "true" ];
             then
+            
+              if git filter-repo --version &> /dev/null; then
+                echo "==> git filter-repo is installed and working."
+              else
+                echo "==> git filter-repo is not installed or not working."
+                echo "==> Find install instructions at this url: https://github.com/newren/git-filter-repo/blob/main/INSTALL.md"
+                exit 1
+              fi
+              
               echo "===> Cleaning up binary files from the git log..."
               echo "~~~> Repository size BEFORE cleanup: $(du -sh .)"
 
