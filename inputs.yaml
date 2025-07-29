@@ -1,0 +1,15 @@
+# Configuration - Set these variables in the inputs.yaml file before running the script
+inputs:
+  source_project_url: https://github.com/project1
+  destination_project_url: https://github.com/project2
+  large_file_cleanup:
+    enable: true # Set false disable
+    file_size: 5M # Could be 1M, 2M, 3M, etc
+  repositories:
+    - source: my-src-repository1
+      destination: my-dest-repository1
+    - source: my-src-repository2
+      destination: my-dest-repository2
+    - source: my-src-repository3
+      destination: my-dest-repository3
+      

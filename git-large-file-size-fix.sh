@@ -76,7 +76,7 @@ git filter-repo \
 echo "===> Clean up the repository"
 git gc --aggressive --prune=now
 
-echo "===> Verify the repository size"
-du -sh .git
+echo "===> Verify the repository git log size (.git): '$(du -sh .git)'"
+
 echo "~~~> Repository size AFTER cleanup: '$(du -sh .)'"
 cd "${LAST_DIR}"
