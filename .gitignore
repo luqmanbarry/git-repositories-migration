@@ -1,1 +1,4 @@
 **/*.patch
+**/repo_migration
+**/migration_reports
+*.log
