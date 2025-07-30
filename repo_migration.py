@@ -1,204 +1,202 @@
-# 
-# DRAFT - Not tested, there may be few bugs
-#
-import os
 import subprocess
-import sys
-import shutil
-from pathlib import Path
+import os
+import yaml
+from datetime import datetime
 
-# Configuration - Set these variables before running the script
-SOURCE_REPOS_ORG_URL = "source.example.com/source-org/source-project"  # Replace with your source Azure Repos URL.
-TARGET_REPOS_ORG_URL = "target.example.com/target-org/target-project"  # Replace with your target Azure DevOps URL.
-SOURCE_REPOS_PROJECT_PAT = ""  # Replace with your source PAT. Leave empty if you've already set up Git Credentials Helper for this URL.
-TARGET_REPOS_PROJECT_PAT = ""  # Replace with your target PAT. Leave empty if you've already set up Git Credentials Helper for this URL.
-TARGET_REPOS_PREFIX = "team-name"  # Common prefix all target repos have. Set to an empty string if none.
-CLEANUP_LARGE_FILES = True  # Set this flag to True if you want large files removed from git history.
-LARGE_FILE_SIZE = "5M"  # Potential values: 500K, 1M, 2M, 3M, 10M, etc.
+# Configuration - Set these variables in the inputs.yaml file before running the script
+INPUT_YAML_FILE = "inputs.yaml"
+if not os.path.isfile(INPUT_YAML_FILE):
+    print(f"File '{INPUT_YAML_FILE}' does not exist or is not a regular file.")
+    exit(1)
 
-# Directories and files
-CURRENT_DIR = Path(os.getcwd())  # Current working directory
-WORKING_DIR = CURRENT_DIR / "repo_migration"  # Working directory for cloning repos
-REPORTS_DIR = CURRENT_DIR / "migration_reports" / (TARGET_REPOS_PREFIX or "")  # Directory where report files will be stored
-PATCH_FILE = WORKING_DIR / "source-state.patch"  # Patch file for merging source and target branches
-SUCCEEDED_REPORT_FILE = REPORTS_DIR / "succeeded-migrations.csv"  # Succeeded code migrations report
-FAILED_REPORT_FILE = REPORTS_DIR / "failed-migrations.csv"  # Failed code migrations report
+# Parse input YAML
+with open(INPUT_YAML_FILE, 'r') as f:
+    config = yaml.safe_load(f)
 
+SOURCE_REPOS_ORG_URL = config['inputs']['source_project_url']
+TARGET_REPOS_ORG_URL = config['inputs']['destination_project_url']
+CLEANUP_LARGE_FILES = config['inputs']['large_file_cleanup']['enable']
+LARGE_FILE_SIZE = config['inputs']['large_file_cleanup']['file_size']
+REPOS_LIST = config['inputs']['repositories']
 
-def run_command(command, cwd=None):
-    """Run a shell command and return its output."""
-    result = subprocess.run(command, shell=True, cwd=cwd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"Error: {result.stderr}")
-        return False
-    return True
+# Create necessary directories
+CURRENT_DIR = os.getcwd()
+WORKING_DIR = f"{CURRENT_DIR}/repo_migration/runs_{datetime.now().strftime('%Y%m%d%H')}"
+REPORTS_DIR = f"{CURRENT_DIR}/migration_reports/{config.get('TARGET_REPOS_PREFIX', '')}"
+os.makedirs(WORKING_DIR, exist_ok=True)
+os.makedirs(REPORTS_DIR, exist_ok=True)
 
+# Prepare reports
+SUCCEEDED_REPORT_FILE = os.path.join(REPORTS_DIR, "succeeded-migrations.csv")
+FAILED_REPORT_FILE = os.path.join(REPORTS_DIR, "failed-migrations.csv")
 
-def clone_repository(source_repo_url_pat, repo_name):
-    """Clone the source repository with all branches and tags."""
-    print(f"==> Cloning repository: {repo_name}...")
-    if not run_command(f"git clone {source_repo_url_pat}"):
-        print(f"==> Repository {repo_name} already exists or failed to clone.")
-        return False
-    return True
+with open(SUCCEEDED_REPORT_FILE, 'w') as f:
+    f.write("source_repo_url, source_repo, source_branch, target_repo_url, target_repo\n")
+with open(FAILED_REPORT_FILE, 'w') as f:
+    f.write("source_repo_url, source_repo, source_branch, target_repo_url, target_repo\n")
 
+if not REPOS_LIST:
+    print("=> Repos list file must be provided as input to the script.")
+    exit(1)
 
-def fetch_all_branches_and_tags(repo_dir):
-    """Fetch all branches and tags from the source remote."""
-    print("==> Fetching all branches and tags...")
-    if not run_command("git fetch source --tags", cwd=repo_dir):
-        return False
-    return True
+def run_command(command):
+    """Run shell commands and handle errors."""
+    print(f"Running command: {command}")
+    try:
+        subprocess.check_call(command, shell=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error: {e}")
+        exit(1)
 
+# Loop through repositories list and perform migration
+for repo in REPOS_LIST:
+    SRC_REPO_NAME = repo['source']
+    DEST_REPO_NAME = repo['destination']
 
-def get_source_branches(repo_dir):
-    """Get a list of all branches in the source remote."""
-    result = subprocess.run(
-        "git branch -r | grep 'source/' | sed 's/source\\///' | grep -v 'HEAD'",
-        shell=True,
-        cwd=repo_dir,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        print(f"Error: {result.stderr}")
-        return []
-    return [branch.strip() for branch in result.stdout.splitlines()]
+    if not SRC_REPO_NAME or not DEST_REPO_NAME:
+        print(f"One of Source ({SRC_REPO_NAME}) and/or destination ({DEST_REPO_NAME}) repository entries is empty.")
+        exit(1)
 
+    SOURCE_REPO_URL = f"{SOURCE_REPOS_ORG_URL}/{SRC_REPO_NAME}"
+    if "dev.azure.com" in SOURCE_REPOS_ORG_URL:
+        SOURCE_REPO_URL = f"{SOURCE_REPOS_ORG_URL}/_git/{SRC_REPO_NAME}"
 
-def push_branch_to_target(repo_dir, branch, target_repo_url_pat):
-    """Push a branch to the target repository."""
-    print(f"===> Pushing branch {branch} to target...")
-    if not run_command(f"git push -u target {branch}", cwd=repo_dir):
-        return False
-    return True
+    TARGET_REPO_URL = f"{TARGET_REPOS_ORG_URL}/{DEST_REPO_NAME}"
+    if "dev.azure.com" in TARGET_REPOS_ORG_URL:
+        TARGET_REPO_URL = f"{TARGET_REPOS_ORG_URL}/_git/{DEST_REPO_NAME}"
 
+    print(f"==> Migrating repository: {SOURCE_REPO_URL}")
 
-def cleanup_large_files(repo_dir):
-    """Clean up large files from git history."""
-    print("===> Cleaning up binary files from the git log...")
-    print(f"~~~> Repository size BEFORE cleanup: {get_repo_size(repo_dir)}")
-
-    commands = [
-        "git repack -a -d --depth=300 --window=300",
-        "git filter-repo --path-glob '*.zip' --path-glob '*.xls' --path-glob '*.tar' --path-glob '*.jar' "
-        "--path-glob '*.gz' --path-glob '*.mov' --path-glob '*.avi' --path-glob '*.iso' --path-glob '*.msi' "
-        "--path-glob '*.mp4' --path-glob '*.war' --path-glob '*.exe' --path-glob '*.dll' --path-glob '*.deb' "
-        "--path-glob '*.vob' --path-glob '*.odt' --path-glob '*.docx' --path-glob '*.doc' --path-glob '*.tgz' "
-        "--path-glob '*.rar' --path-glob '*.bz2' --path-glob '*.bzip2' --path-glob '*.7z' --path-glob '*.pptx' "
-        "--path-glob '*.xlsm' --path-glob '*.xlsb' --path-glob '*.xltx' --path-glob '*.xlsx' --path-glob '*.pkg' "
-        "--path-glob '*.rpm' --path-glob '*.tar.gz' --path-glob '*.dmg' --path-glob '*.bin' --path-glob 'node_modules/**' "
-        "--path-glob '**/node_modules/**' --invert-paths --force",
-        f"git filter-repo --strip-blobs-bigger-than {LARGE_FILE_SIZE} --force",
-        "git gc --aggressive --prune=now",
-    ]
-    for command in commands:
-        if not run_command(command, cwd=repo_dir):
-            return False
-
-    print(f"~~~> Repository size AFTER cleanup: {get_repo_size(repo_dir)}")
-    return True
-
-
-def get_repo_size(repo_dir):
-    """Get the size of the repository."""
-    result = subprocess.run("du -sh .", shell=True, cwd=repo_dir, capture_output=True, text=True)
-    return result.stdout.strip()
-
-
-def migrate_repository(source_repo_url, repo_name, target_repo_url, target_repo_url_pat):
-    """Migrate a single repository from source to target."""
-    repo_dir = WORKING_DIR / repo_name
     os.chdir(WORKING_DIR)
+    print("==> Clone the source repository with all branches and tags...")
+    run_command(f"git clone {SOURCE_REPO_URL} || echo 'Repo exists already'")
 
-    # Clone the repository
-    if not clone_repository(source_repo_url, repo_name):
-        return
+    os.chdir(SRC_REPO_NAME)
+    print("==> Set source remote url to repo...")
+    run_command(f"git remote add source {SOURCE_REPO_URL}")
 
-    # Fetch all branches and tags
-    if not fetch_all_branches_and_tags(repo_dir):
-        return
+    # Fetch all branches and tags from the source remote
+    print(f"==> Fetching all branches and tags from {SOURCE_REPO_URL}...")
+    run_command("git fetch source --tags")
 
-    # Get a list of all branches
-    source_branches = get_source_branches(repo_dir)
-    if not source_branches:
-        print("==> No branches found in the source repository.")
-        return
+    print("==> Get a list of all branches in the source remote...")
+    branches = subprocess.check_output("git branch -r | grep 'source/' | sed 's/source\///' | grep -v 'HEAD'", shell=True)
+    branches = branches.decode('utf-8').splitlines()
 
-    # Push each branch to the target repository
-    for branch in source_branches:
-        print(f"===> Migrating branch: {branch}")
-        if not push_branch_to_target(repo_dir, branch, target_repo_url_pat):
-            if CLEANUP_LARGE_FILES:
-                if not cleanup_large_files(repo_dir):
-                    print(f"===> Failed to clean up large files for branch {branch}.")
-                    continue
-                if not push_branch_to_target(repo_dir, branch, target_repo_url_pat):
-                    print(f"===> Failed to push branch {branch} after cleanup.")
-                    continue
+    print(f"Source Branches: {branches}")
 
-    # Push tags to the target repository
-    print("==> Pushing tags to target...")
-    run_command("git push target --tags", cwd=repo_dir)
+    # Set target remote URL to repo
+    print("==> Set target remote URL to repo...")
+    run_command(f"git remote add target {TARGET_REPO_URL}")
 
+    for branch in branches:
+        print(f"===> Migrating branch {branch}...")
+        branch = branch.strip()
 
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: python repo_migration.py <repos_list_file>")
-        sys.exit(1)
+        print(f"===> Checkout the branch from the source remote")
+        run_command(f"git checkout -b {branch} source/{branch} || true")
 
-    repos_list_file = sys.argv[1]
-    if not os.path.isfile(repos_list_file):
-        print(f"Error: Repos list file '{repos_list_file}' not found.")
-        sys.exit(1)
+        run_command(f"git fetch")
+        run_command(f"git pull source {branch}")
 
-    # Create directories
-    WORKING_DIR.mkdir(parents=True, exist_ok=True)
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+        PATCH_FILE = f"{WORKING_DIR}/source-state.patch"
+        print("===> Save the source state to a patch file")
+        run_command(f"git diff HEAD > {PATCH_FILE}")
 
-    # Prepare report files
-    with open(SUCCEEDED_REPORT_FILE, "w") as f:
-        f.write("source_repo_url, source_repo, source_branch, target_repo_url, target_repo\n")
-    with open(FAILED_REPORT_FILE, "w") as f:
-        f.write("source_repo_url, source_repo, source_branch, target_repo_url, target_repo\n")
+        print(f"===> Pushing branch {branch} to target repository...")
+        run_command(f"git push -u target {branch}")
 
-    # Read the list of repositories to migrate
-    with open(repos_list_file, "r") as f:
-        repos_list = f.readlines()
-
-    for repo in repos_list:
-        repo = repo.strip()
-        if not repo:
-            continue
-
-        print(f"==> Migrating repository: {repo}")
-
-        # Construct source and target URLs
-        source_repo_url = f"{SOURCE_REPOS_ORG_URL}/_git/{repo}"
-        if SOURCE_REPOS_PROJECT_PAT:
-            source_repo_url_pat = f"https://{SOURCE_REPOS_PROJECT_PAT}@{SOURCE_REPOS_ORG_URL}/_git/{repo}"
+        # Check if push was successful
+        if subprocess.call(f"git push -u target {branch}", shell=True) == 0:
+            print(f"===> Migration for branch '{branch}' succeeded.")
+            with open(SUCCEEDED_REPORT_FILE, 'a') as f:
+                f.write(f"{SOURCE_REPO_URL}, {SRC_REPO_NAME}, {branch}, {TARGET_REPO_URL}, {DEST_REPO_NAME}\n")
         else:
-            source_repo_url_pat = f"https://{SOURCE_REPOS_ORG_URL}/_git/{repo}"
+            print(f"===> Migration for branch '{branch}' failed. Performing conflict resolution.")
 
-        if TARGET_REPOS_PREFIX:
-            target_repo = f"{TARGET_REPOS_PREFIX}-{repo}"
-        else:
-            target_repo = repo
+            if CLEANUP_LARGE_FILES == "true":
+                print("==> Cleaning up binary files from the git history...")
 
-        target_repo_url = f"{TARGET_REPOS_ORG_URL}/_git/{target_repo}"
-        if TARGET_REPOS_PROJECT_PAT:
-            target_repo_url_pat = f"https://{TARGET_REPOS_PROJECT_PAT}@{TARGET_REPOS_ORG_URL}/_git/{target_repo}"
-        else:
-            target_repo_url_pat = f"https://{TARGET_REPOS_ORG_URL}/_git/{target_repo}"
+                if subprocess.call("git filter-repo --version", shell=True) != 0:
+                    print("==> git filter-repo is not installed or not working.")
+                    print("==> Find install instructions at this url: https://github.com/newren/git-filter-repo/blob/main/INSTALL.md")
+                    exit(1)
 
-        # Migrate the repository
-        migrate_repository(source_repo_url_pat, repo, target_repo_url, target_repo_url_pat)
+                print("~~~> Repository size BEFORE cleanup: ", subprocess.check_output("du -sh .", shell=True).decode('utf-8'))
+                run_command("git repack -a -d --depth=300 --window=300")
 
-    print("=> Migration completed!")
-    print(f"=> Check the reports files in: {REPORTS_DIR}")
-    print(f"=> 'SUCCEEDED' migrations report file: {SUCCEEDED_REPORT_FILE}")
-    print(f"=> 'FAILED' migrations report file: {FAILED_REPORT_FILE}")
+                # Remove files with binary extensions from git history
+                run_command("""
+                    git filter-repo \
+                    --path-glob '*.zip' \
+                    --path-glob '*.xls' \
+                    --path-glob '*.tar' \
+                    --path-glob '*.jar' \
+                    --path-glob '*.gz' \
+                    --path-glob '*.mov' \
+                    --path-glob '*.avi' \
+                    --path-glob '*.iso' \
+                    --path-glob '*.msi' \
+                    --path-glob '*.mp4' \
+                    --path-glob '*.war' \
+                    --path-glob '*.exe' \
+                    --path-glob '*.dll' \
+                    --path-glob '*.deb' \
+                    --path-glob '*.vob' \
+                    --path-glob '*.odt' \
+                    --path-glob '*.docx' \
+                    --path-glob '*.doc' \
+                    --path-glob '*.tgz' \
+                    --path-glob '*.rar' \
+                    --path-glob '*.bz2' \
+                    --path-glob '*.bzip2' \
+                    --path-glob '*.7z' \
+                    --path-glob '*.pptx' \
+                    --path-glob '*.xlsm' \
+                    --path-glob '*.xlsb' \
+                    --path-glob '*.xltx' \
+                    --path-glob '*.xlsx' \
+                    --path-glob '*.pkg' \
+                    --path-glob '*.rpm' \
+                    --path-glob '*.tar.gz' \
+                    --path-glob '*.dmg' \
+                    --path-glob '*.bin' \
+                    --path-glob 'node_modules/**' \
+                    --path-glob '**/node_modules/**' \
+                    --invert-paths \
+                    --force
+                """)
 
+                run_command(f"git filter-repo --strip-blobs-bigger-than {LARGE_FILE_SIZE} --invert-paths --force")
+                run_command("git gc --aggressive --prune=now")
+                print("~~~> Repository size AFTER cleanup: ", subprocess.check_output("du -sh .", shell=True).decode('utf-8'))
 
-if __name__ == "__main__":
-    main()
+                run_command("git commit -am 'Repo Migration: Removed binary files.'")
+                run_command(f"git push target {branch}")
+
+            print(f"===> Reset to latest from target branch")
+            run_command(f"git fetch target {branch}")
+            run_command(f"git reset --hard target/{branch}")
+
+            print(f"===> Applying source state patch file...")
+            run_command(f"git apply {PATCH_FILE}")
+            run_command(f"git commit -am 'Repo Migration: Merged source and target branches.'")
+
+            run_command(f"git push target {branch}")
+
+            if subprocess.call(f"git push target {branch}", shell=True) != 0:
+                with open(FAILED_REPORT_FILE, 'a') as f:
+                    f.write(f"{SOURCE_REPO_URL}, {SRC_REPO_NAME}, {branch}, {TARGET_REPO_URL}, {DEST_REPO_NAME}\n")
+            else:
+                print(f"===> Migration for branch '{branch}' succeeded after conflict resolution.")
+                with open(SUCCEEDED_REPORT_FILE, 'a') as f:
+                    f.write(f"{SOURCE_REPO_URL}, {SRC_REPO_NAME}, {branch}, {TARGET_REPO_URL}, {DEST_REPO_NAME}\n")
+
+    # Copy tags from source to target
+    print(f"==> Copying tags from source to target...")
+    run_command(f"git push target --tags")
+
+print("=> Migration completed!")
+print(f"=> Check the reports files in: {REPORTS_DIR}")
+print(f"=> 'SUCCEEDED' migrations report file: {SUCCEEDED_REPORT_FILE}")
+print(f"=> 'FAILED' migrations report file: {FAILED_REPORT_FILE}")
