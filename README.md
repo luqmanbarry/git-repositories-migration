@@ -44,11 +44,11 @@ To enable Large File cleanup, set these two parameters (enabled by default):
          file_size: 5M # Could be 1M, 2M, 3M, etc
       repositories:
          - source: my-src-repository1
-            destination: my-dest-repository1
+           destination: my-dest-repository1
          - source: my-src-repository2
-            destination: my-dest-repository2
+           destination: my-dest-repository2
          - source: my-src-repository3
-            destination: my-dest-repository3
+           destination: my-dest-repository3
       
    ```
 
